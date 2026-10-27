@@ -28,5 +28,32 @@ export const jerseyValid = (row) => {
 
 export const jerseysValid = (rows) => Array.isArray(rows) && rows.length > 0 && rows.every(jerseyValid)
 
+// Focus the first jersey input whose value is invalid (independent of whether errors are shown yet).
+// Pass a container to stay within one form when several are on the page.
+export function focusFirstInvalid(root = document) {
+  root?.querySelector('.jersey-table [data-invalid="true"]')?.focus()
+}
+
+// Unsaved jersey entries survive navigation (per tab, per design) and are shared by
+// the browse cards and the design page.
+const draftKey = (id) => `jersey-draft-${id}`
+
+export function loadDraft(id) {
+  try {
+    return JSON.parse(sessionStorage.getItem(draftKey(id))) ?? null
+  } catch {
+    return null
+  }
+}
+
+export function saveDraft(id, draft) {
+  try {
+    if (draft) sessionStorage.setItem(draftKey(id), JSON.stringify(draft))
+    else sessionStorage.removeItem(draftKey(id))
+  } catch {
+    /* storage unavailable: the draft just won't survive navigation */
+  }
+}
+
 export const cleanJerseys = (rows) =>
   (rows ?? []).map((r) => ({ name: String(r.name ?? '').trim(), number: String(r.number ?? '').trim() }))

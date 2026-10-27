@@ -2026,6 +2026,80 @@ td .actions {
   line-height: 1.3;
 }
 
+/* Browse-card variant: the link covers art + title, the jersey form sits below it. */
+.design-card-link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* An open jersey form shouldn't stretch the neighbouring cards in its row. */
+.grid:has(.jersey-quick-body) {
+  align-items: start;
+}
+
+/* Don't lift the card while someone is typing into it. */
+.design-card-jersey:focus-within:hover {
+  transform: none;
+}
+
+.jersey-quick {
+  padding: 0 18px 18px;
+}
+
+.jersey-quick-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.jersey-quick-qty {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.jersey-quick-qty .qty button {
+  width: 34px;
+  height: 34px;
+}
+
+.jersey-quick .jersey-block,
+.jersey-quick .alert {
+  margin: 0;
+}
+
+.jersey-quick .jersey-table {
+  min-width: 0;
+}
+
+.jersey-quick .jersey-table th,
+.jersey-quick .jersey-table td {
+  padding: 8px 6px;
+}
+
+.jersey-quick .jersey-table .jt-no {
+  width: 40px;
+}
+
+.jersey-quick .jersey-table td.jt-no {
+  padding-top: 18px;
+}
+
+.jersey-quick .jersey-table .jt-num {
+  width: 92px;
+}
+
+.jersey-quick .jersey-table th.jt-num {
+  white-space: normal;
+}
+
+.jersey-quick .jersey-table .input {
+  padding: 8px 10px;
+}
+
 .cart-jerseys {
   grid-column: 1 / -1;
   border-top: 1px solid var(--border);

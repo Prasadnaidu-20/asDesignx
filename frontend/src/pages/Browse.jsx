@@ -87,7 +87,7 @@ export default function Browse() {
         <>
           <div className="grid">
             {visible.map((p) => (
-              <DesignCard key={p.id} product={p} />
+              <DesignCard key={p.id} product={p} customizable />
             ))}
           </div>
           {pages > 1 && (

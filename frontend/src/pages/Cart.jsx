@@ -2,27 +2,44 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, formatPrice } from '../api/client'
 import DesignArt from '../components/DesignArt'
+import JerseyTable, { JerseyList } from '../components/JerseyTable'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
+import { cleanJerseys, focusFirstInvalid, jerseysValid } from '../utils/jerseys'
+
+// Jersey lines carry one { name, number } per unit; every other product sends no jersey data.
+const orderLine = ({ product, quantity, jerseys }) =>
+  product.is_jersey
+    ? { product_id: product.id, quantity, jerseys: cleanJerseys(jerseys) }
+    : { product_id: product.id, quantity }
 
 export default function Cart() {
-  const { items, setQuantity, remove, clear, count, total } = useCart()
+  const { items, setQuantity, setJerseys, remove, clear, count, total } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showErrors, setShowErrors] = useState(false)
+
+  const incomplete = items.filter((i) => i.product.is_jersey && !jerseysValid(i.jerseys))
 
   const checkout = async () => {
+    setError('')
+    if (incomplete.length) {
+      setShowErrors(true)
+      setError(`Enter a name and jersey number for every jersey in ${incomplete.map((i) => `'${i.product.name}'`).join(', ')}.`)
+      focusFirstInvalid()
+      return
+    }
     if (!user) {
       navigate('/login', { state: { from: '/cart' } })
       return
     }
-    setError('')
     setBusy(true)
     try {
-      const order = await api.placeOrder(items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })))
+      const order = await api.placeOrder(items.map(orderLine))
       clear()
       toast(`Order #${order.id} placed`)
       navigate('/orders')
@@ -58,7 +75,7 @@ export default function Cart() {
 
       <div className="cart-layout">
         <div>
-          {items.map(({ product, quantity }) => (
+          {items.map(({ product, quantity, jerseys }) => (
             <div key={product.id} className="card cart-item">
               <Link to={`/designs/${product.id}`} className="cart-thumb">
                 <DesignArt id={product.id} name={product.name} />
@@ -89,12 +106,36 @@ export default function Cart() {
                   Remove
                 </button>
               </div>
+              {product.is_jersey && (
+                <div className="cart-jerseys">
+                  <JerseyTable
+                    rows={jerseys ?? []}
+                    onChange={(rows) => setJerseys(product.id, rows)}
+                    showErrors={showErrors}
+                    idPrefix={`c${product.id}`}
+                    title="Jersey names & numbers"
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         <aside className="card summary">
           <h3>Order summary</h3>
+          <div className="summary-lines">
+            {items.map(({ product, quantity, jerseys }) => (
+              <div key={product.id} className="summary-line">
+                <div className="summary-row">
+                  <span>
+                    {product.name} × {quantity}
+                  </span>
+                  <span>{formatPrice(Number(product.price) * quantity)}</span>
+                </div>
+                {product.is_jersey && <JerseyList rows={jerseys} />}
+              </div>
+            ))}
+          </div>
           <div className="summary-row">
             <span>Subtotal</span>
             <span>{formatPrice(total)}</span>

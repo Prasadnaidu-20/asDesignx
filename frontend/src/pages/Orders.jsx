@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, formatPrice } from '../api/client'
+import { JerseyList } from '../components/JerseyTable'
 
 export default function Orders() {
   const [orders, setOrders] = useState(null)
@@ -47,12 +48,15 @@ export default function Orders() {
             </div>
             <div className="order-lines">
               {o.items.map((it) => (
-                <div key={it.product_id} className="order-line">
-                  <span>
-                    <Link to={`/designs/${it.product_id}`}>{names[it.product_id] ?? `Design #${it.product_id}`}</Link>{' '}
-                    × {it.quantity}
-                  </span>
-                  <span>{formatPrice(Number(it.unit_price) * it.quantity)}</span>
+                <div key={it.product_id}>
+                  <div className="order-line">
+                    <span>
+                      <Link to={`/designs/${it.product_id}`}>{names[it.product_id] ?? `Design #${it.product_id}`}</Link>{' '}
+                      × {it.quantity}
+                    </span>
+                    <span>{formatPrice(Number(it.unit_price) * it.quantity)}</span>
+                  </div>
+                  <JerseyList rows={it.jerseys} />
                 </div>
               ))}
             </div>

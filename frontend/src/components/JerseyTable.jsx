@@ -1,12 +1,32 @@
 import { useState } from 'react'
 import { NAME_MAX, jerseyErrors, jerseysValid } from '../utils/jerseys'
 
-// Focus the first jersey input whose value is invalid (independent of whether errors are shown yet).
-export function focusFirstInvalid() {
-  document.querySelector('.jersey-table [data-invalid="true"]')?.focus()
+// Read-only "1. Name · #10" list used in the order summary and order history.
+export function JerseyList({ rows }) {
+  if (!rows?.length) return null
+  return (
+    <ol className="jersey-list">
+      {rows.map((r, i) => {
+        const name = String(r.name ?? '').trim()
+        const number = String(r.number ?? '').trim()
+        return (
+          <li key={i}>
+            <span className="jl-name">{name || <em>Name missing</em>}</span>
+            <span className="jl-num">{number ? `#${number}` : <em>No number</em>}</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
-export default function JerseyTable({ rows, onChange, showErrors = false, idPrefix = 'j' }) {
+export default function JerseyTable({
+  rows,
+  onChange,
+  showErrors = false,
+  idPrefix = 'j',
+  title = 'Name & number for each jersey',
+}) {
   const [touched, setTouched] = useState({})
 
   const update = (index, field, value) =>
@@ -19,7 +39,7 @@ export default function JerseyTable({ rows, onChange, showErrors = false, idPref
   return (
     <div className="jersey-block">
       <div className="jersey-head">
-        <span>Name &amp; number for each jersey</span>
+        <span>{title}</span>
         <span className={`chip${done ? ' primary' : ''}`}>
           {rows.filter((r) => !jerseyErrors(r).name && !jerseyErrors(r).number).length} / {rows.length} ready
         </span>
@@ -28,22 +48,27 @@ export default function JerseyTable({ rows, onChange, showErrors = false, idPref
         <table className="jersey-table">
           <thead>
             <tr>
-              <th className="jt-no">#</th>
+              <th className="jt-no">S.No.</th>
               <th>Name</th>
-              <th className="jt-num">Number</th>
+              <th className="jt-num">Jersey Number</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, i) => {
               const errors = jerseyErrors(row)
               const fields = [
-                { key: 'name', label: 'Name', props: { maxLength: NAME_MAX, autoComplete: 'off' } },
-                { key: 'number', label: 'Number', props: { inputMode: 'numeric', maxLength: 3, autoComplete: 'off' } },
+                { key: 'name', label: 'Name', placeholder: 'Enter name', props: { maxLength: NAME_MAX, autoComplete: 'off' } },
+                {
+                  key: 'number',
+                  label: 'Jersey number',
+                  placeholder: 'Enter number',
+                  props: { inputMode: 'numeric', pattern: '[0-9]*', maxLength: 3, autoComplete: 'off' },
+                },
               ]
               return (
                 <tr key={i}>
                   <td className="jt-no">{i + 1}</td>
-                  {fields.map(({ key, label, props }) => {
+                  {fields.map(({ key, label, placeholder, props }) => {
                     const id = `${idPrefix}-${key}-${i}`
                     const err = errors[key]
                     const visible = err && (showErrors || touched[id])
@@ -53,7 +78,7 @@ export default function JerseyTable({ rows, onChange, showErrors = false, idPref
                           id={id}
                           className={`input${visible ? ' invalid' : ''}`}
                           value={row[key] ?? ''}
-                          placeholder={label}
+                          placeholder={placeholder}
                           aria-label={`Jersey ${i + 1} ${label.toLowerCase()}`}
                           aria-invalid={visible ? 'true' : undefined}
                           aria-describedby={visible ? `${id}-err` : undefined}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { formatPrice } from '../api/client'
 import DesignArt from './DesignArt'
+import JerseyQuickBuy from './JerseyQuickBuy'
 
 export function StockChip({ stock }) {
   if (stock <= 0) return <span className="chip bad">Sold out</span>
@@ -8,9 +9,9 @@ export function StockChip({ stock }) {
   return <span className="chip ok">In stock</span>
 }
 
-export default function DesignCard({ product }) {
+function CardContent({ product }) {
   return (
-    <Link to={`/designs/${product.id}`} className="card design-card">
+    <>
       <DesignArt id={product.id} name={product.name} />
       <div className="design-body">
         <h3>{product.name}</h3>
@@ -19,6 +20,25 @@ export default function DesignCard({ product }) {
           <StockChip stock={product.stock} />
         </div>
       </div>
+    </>
+  )
+}
+
+// `customizable` adds the inline jersey name/number form to in-stock jersey designs.
+export default function DesignCard({ product, customizable = false }) {
+  if (customizable && product.is_jersey && product.stock > 0) {
+    return (
+      <div className="card design-card design-card-jersey">
+        <Link to={`/designs/${product.id}`} className="design-card-link">
+          <CardContent product={product} />
+        </Link>
+        <JerseyQuickBuy product={product} />
+      </div>
+    )
+  }
+  return (
+    <Link to={`/designs/${product.id}`} className="card design-card">
+      <CardContent product={product} />
     </Link>
   )
 }

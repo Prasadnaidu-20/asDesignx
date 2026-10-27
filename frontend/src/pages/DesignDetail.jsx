@@ -3,30 +3,18 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, formatPrice } from '../api/client'
 import DesignArt from '../components/DesignArt'
 import { StockChip } from '../components/DesignCard'
-import JerseyTable, { focusFirstInvalid } from '../components/JerseyTable'
+import JerseyTable from '../components/JerseyTable'
 import { useToast } from '../components/Toast'
 import { useCart } from '../context/CartContext'
-import { cleanJerseys, emptyJersey, jerseysValid, resizeJerseys } from '../utils/jerseys'
-
-// Unsaved jersey entries survive a trip to the cart and back (per tab, per design).
-const draftKey = (id) => `jersey-draft-${id}`
-
-function loadDraft(id) {
-  try {
-    return JSON.parse(sessionStorage.getItem(draftKey(id))) ?? null
-  } catch {
-    return null
-  }
-}
-
-function saveDraft(id, draft) {
-  try {
-    if (draft) sessionStorage.setItem(draftKey(id), JSON.stringify(draft))
-    else sessionStorage.removeItem(draftKey(id))
-  } catch {
-    /* storage unavailable: the draft just won't survive navigation */
-  }
-}
+import {
+  cleanJerseys,
+  emptyJersey,
+  focusFirstInvalid,
+  jerseysValid,
+  loadDraft,
+  resizeJerseys,
+  saveDraft,
+} from '../utils/jerseys'
 
 export default function DesignDetail() {
   const { id } = useParams()
