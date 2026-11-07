@@ -80,6 +80,8 @@ export const api = {
 
   placeOrder: (items) => request('/orders', { method: 'POST', body: { items } }),
   listOrders: () => request('/orders?limit=100'),
+  // Shirt mockups, print files and design JSON for one cart line (multipart FormData).
+  uploadCustomization: (form) => request('/customizations', { method: 'POST', multipart: form }),
 
   listMyDesigns: () => request('/my-designs?limit=100'),
   uploadMyDesign: ({ image, name, number }) => {

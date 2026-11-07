@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, formatPrice } from '../api/client'
 import DesignArt from '../components/DesignArt'
@@ -6,6 +6,10 @@ import { StockChip } from '../components/DesignCard'
 import JerseyTable from '../components/JerseyTable'
 import { useToast } from '../components/Toast'
 import { useCart } from '../context/CartContext'
+import { saveCartDesign } from '../designer/store'
+
+// Fabric.js is heavy, so the designer is only downloaded on design pages.
+const ShirtDesigner = lazy(() => import('../components/ShirtDesigner'))
 import {
   cleanJerseys,
   emptyJersey,
@@ -25,6 +29,8 @@ export default function DesignDetail() {
   const [showErrors, setShowErrors] = useState(false)
   const [buyError, setBuyError] = useState('')
   const [formKey, setFormKey] = useState(0) // bumped to reset the table's touched state
+  const [preparing, setPreparing] = useState(false)
+  const designerRef = useRef(null)
   const { items, add } = useCart()
   const toast = useToast()
   const navigate = useNavigate()
@@ -89,7 +95,8 @@ export default function DesignDetail() {
     if (isJersey) setJerseys((rows) => resizeJerseys(rows, q))
   }
 
-  const addToCart = (goToCart) => {
+  const addToCart = async (goToCart) => {
+    if (preparing) return
     setBuyError('')
     if (qty > room) {
       setBuyError(
@@ -106,7 +113,22 @@ export default function DesignDetail() {
       return
     }
 
-    add(product, qty, isJersey ? cleanJerseys(jerseys) : [])
+    // Render the mockups and print files now, so they're ready by checkout.
+    let design = null
+    if (designerRef.current) {
+      setPreparing(true)
+      try {
+        const exported = await designerRef.current.exportDesign()
+        if (exported) design = await saveCartDesign(product.id, exported)
+      } catch (e) {
+        setBuyError(`Couldn’t prepare your shirt mockup: ${e.message}`)
+        return
+      } finally {
+        setPreparing(false)
+      }
+    }
+
+    add(product, qty, isJersey ? cleanJerseys(jerseys) : [], design)
     if (isJersey) {
       saveDraft(id, null)
       setQty(1)
@@ -125,7 +147,13 @@ export default function DesignDetail() {
       </Link>
       <div className="detail">
         <div className="card detail-art">
-          <DesignArt id={product.id} name={product.name} />
+          {soldOut ? (
+            <DesignArt id={product.id} name={product.name} />
+          ) : (
+            <Suspense fallback={<div className="skeleton" style={{ aspectRatio: '5 / 6' }} />}>
+              <ShirtDesigner key={product.id} ref={designerRef} product={product} jersey={jerseys[0]} />
+            </Suspense>
+          )}
         </div>
 
         <div className="card detail-info">
@@ -158,10 +186,10 @@ export default function DesignDetail() {
               )}
               {buyError && <div className="alert alert-error">{buyError}</div>}
               <div className="buy-row">
-                <button className="btn btn-primary" onClick={() => addToCart(true)}>
-                  Buy now
+                <button className="btn btn-primary" disabled={preparing} onClick={() => addToCart(true)}>
+                  {preparing ? 'Preparing mockup…' : 'Buy now'}
                 </button>
-                <button className="btn btn-ghost" onClick={() => addToCart(false)}>
+                <button className="btn btn-ghost" disabled={preparing} onClick={() => addToCart(false)}>
                   Add to cart
                 </button>
               </div>

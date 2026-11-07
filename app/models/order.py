@@ -5,6 +5,7 @@ from sqlalchemy import JSON, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.customization import Customization
 
 
 class Order(Base):
@@ -33,5 +34,10 @@ class OrderItem(Base):
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     # One {"name", "number"} entry per unit for jersey designs; null for other products.
     jerseys: Mapped[list[dict] | None] = mapped_column(JSON, default=None)
+    # The customer's shirt mockup/print files, when they customised the design.
+    customization_id: Mapped[int | None] = mapped_column(
+        ForeignKey("customizations.id"), default=None, unique=True
+    )
 
     order: Mapped[Order] = relationship(back_populates="items")
+    customization: Mapped[Customization | None] = relationship(lazy="selectin")

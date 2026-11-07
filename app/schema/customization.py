@@ -1,0 +1,24 @@
+from datetime import datetime, timezone
+
+from pydantic import BaseModel, ConfigDict, field_validator
+
+
+class CustomizationView(BaseModel):
+    mockup_url: str
+    print_url: str
+
+
+class CustomizationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    product_id: int
+    views: dict[str, CustomizationView]
+    design_url: str
+    created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def assume_utc(cls, value: datetime) -> datetime:
+        # SQLite drops tzinfo on read; we always store UTC, so re-attach it.
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)

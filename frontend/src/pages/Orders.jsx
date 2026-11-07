@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { api, formatPrice } from '../api/client'
 import { JerseyList } from '../components/JerseyTable'
 
@@ -7,6 +7,7 @@ export default function Orders() {
   const [orders, setOrders] = useState(null)
   const [names, setNames] = useState({})
   const [error, setError] = useState('')
+  const placed = useLocation().state?.placed // set by the cart right after checkout
 
   useEffect(() => {
     // Order items only carry product_id, so look up names from the catalogue.
@@ -37,8 +38,13 @@ export default function Orders() {
             </Link>
           </div>
         )}
+        {placed && orders?.some((o) => o.id === placed) && (
+          <div className="alert alert-success" role="status">
+            Thanks! Order #{placed} is confirmed — your shirt mockups are saved below.
+          </div>
+        )}
         {orders?.map((o) => (
-          <div key={o.id} className="card order">
+          <div key={o.id} className={`card order${o.id === placed ? ' just-placed' : ''}`}>
             <div className="order-head">
               <div>
                 <h3>Order #{o.id}</h3>
@@ -57,6 +63,16 @@ export default function Orders() {
                     <span>{formatPrice(Number(it.unit_price) * it.quantity)}</span>
                   </div>
                   <JerseyList rows={it.jerseys} />
+                  {it.customization && (
+                    <div className="order-mockups">
+                      {Object.entries(it.customization.views).map(([side, files]) => (
+                        <a key={side} href={files.mockup_url} target="_blank" rel="noreferrer">
+                          <img src={files.mockup_url} alt={`Shirt mockup, ${side}`} loading="lazy" />
+                          {side === 'front' ? 'Front' : 'Back'}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

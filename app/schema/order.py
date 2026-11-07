@@ -4,6 +4,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
+from app.schema.customization import CustomizationRead
+
 
 class JerseyEntry(BaseModel):
     # Same rules as personalised uploads (see design_service): 1-40 char name, 1-3 digit number.
@@ -16,6 +18,8 @@ class OrderItemCreate(BaseModel):
     quantity: int = Field(gt=0, le=1000)
     # Required (one per unit) for jersey designs; must be omitted for everything else.
     jerseys: list[JerseyEntry] | None = None
+    # An uploaded shirt design (POST /customizations) for this product, if the customer made one.
+    customization_id: int | None = None
 
 
 class OrderCreate(BaseModel):
@@ -29,6 +33,7 @@ class OrderItemRead(BaseModel):
     quantity: int
     unit_price: Decimal
     jerseys: list[JerseyEntry] | None = None
+    customization: CustomizationRead | None = None
 
 
 class OrderRead(BaseModel):

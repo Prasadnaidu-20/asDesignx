@@ -3,10 +3,12 @@ import time
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.services import storage
 from app.services.errors import ServiceError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -14,6 +16,8 @@ logger = logging.getLogger("app")
 
 app = FastAPI(title=settings.PROJECT_NAME)
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+# Customer shirt mockups/print files (local storage backend). Keys are random UUID paths.
+app.mount(settings.MEDIA_URL, StaticFiles(directory=storage.media_root()), name="media")
 
 
 @app.middleware("http")

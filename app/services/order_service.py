@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.crud import customization as customization_crud
 from app.crud import order as order_crud
 from app.models.order import Order, OrderItem
 from app.models.product import Product
@@ -15,10 +16,25 @@ def place_order(db: Session, user: User, data: OrderCreate) -> Order:
     # Merge duplicate lines so each product is validated and decremented once.
     quantities: dict[int, int] = {}
     jerseys: dict[int, list[dict]] = {}
+    customizations: dict[int, int] = {}
     for line in data.items:
         quantities[line.product_id] = quantities.get(line.product_id, 0) + line.quantity
         if line.jerseys is not None:
             jerseys.setdefault(line.product_id, []).extend(j.model_dump() for j in line.jerseys)
+        if line.customization_id is not None:
+            # One shirt design per product line; merged lines can't carry two different designs.
+            if customizations.setdefault(line.product_id, line.customization_id) != line.customization_id:
+                raise ServiceError(f"Product {line.product_id} has more than one shirt design", 422)
+
+    for product_id, customization_id in customizations.items():
+        custom = customization_crud.get(db, customization_id)
+        # Same 404 for "missing" and "someone else's" to avoid leaking IDs.
+        if custom is None or custom.user_id != user.id:
+            raise ServiceError(f"Shirt design {customization_id} not found", 404)
+        if custom.product_id != product_id:
+            raise ServiceError(f"Shirt design {customization_id} belongs to a different product", 422)
+        if customization_crud.is_attached(db, customization_id):
+            raise ServiceError(f"Shirt design {customization_id} is already part of an order", 409)
 
     products = {
         p.id: p
@@ -58,6 +74,7 @@ def place_order(db: Session, user: User, data: OrderCreate) -> Order:
                 quantity=qty,
                 unit_price=product.price,
                 jerseys=product_jerseys if product.is_jersey else None,
+                customization_id=customizations.get(product_id),
             )
         )
         total += product.price * qty

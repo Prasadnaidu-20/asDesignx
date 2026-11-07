@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -10,8 +14,15 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-change-me"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    UPLOAD_DIR: str = "uploads"
+    # Upload folders live inside the project (on its drive), not wherever the server is started.
+    UPLOAD_DIR: str = str(PROJECT_ROOT / "uploads")
     MAX_UPLOAD_BYTES: int = 5 * 1024 * 1024
+    # Shirt mockups / print files. "local" writes under MEDIA_DIR and serves it at MEDIA_URL;
+    # a Cloudflare R2 backend can be added in app/services/storage.py later.
+    STORAGE_BACKEND: str = "local"
+    MEDIA_DIR: str = str(PROJECT_ROOT / "uploads" / "media")
+    MEDIA_URL: str = "/media"
+    MAX_CUSTOMIZATION_BYTES: int = 40 * 1024 * 1024  # per file; a 300 DPI print PNG can be large
 
 
 settings = Settings()

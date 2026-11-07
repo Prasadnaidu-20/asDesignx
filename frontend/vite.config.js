@@ -8,6 +8,8 @@ export default defineConfig({
     // Forward API calls to FastAPI so the browser sees one origin (no CORS needed in dev).
     proxy: {
       '/api': 'http://127.0.0.1:8000',
+      // Saved shirt mockups/print files (backend local storage).
+      '/media': 'http://127.0.0.1:8000',
     },
   },
 })
